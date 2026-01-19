@@ -1,0 +1,45 @@
+{
+  "name": "gemini-slot-machine",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently -k \"npm:server\" \"npm:dev:vite\"",
+    "dev:vite": "vite",
+    "server": "tsx server/index.js",
+    "dev:full": "concurrently -k \"npm:server\" \"npm:dev:vite\"",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:reset": "tsx drizzle/reset.ts",
+    "db:seed": "tsx drizzle/seed.ts",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/genai": "^1.29.0",
+    "@remix-run/router": "1.15.3",
+    "bcryptjs": "^3.0.3",
+    "cookie": "^1.1.1",
+    "drizzle-orm": "^0.45.1",
+    "jsonwebtoken": "^9.0.3",
+    "postgres": "^3.4.8",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "react-router-dom": "6.22.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^3.0.0",
+    "@types/cookie": "^1.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.14.0",
+    "@vercel/node": "^5.5.24",
+    "@vitejs/plugin-react": "^5.0.0",
+    "concurrently": "^9.2.1",
+    "dotenv": "^16.6.1",
+    "drizzle-kit": "^0.31.8",
+    "express": "^4.22.1",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
