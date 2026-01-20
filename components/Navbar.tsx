@@ -1,15 +1,17 @@
 
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
+import { UserButton, useClerk } from '@clerk/clerk-react';
 import { useApp } from '../context/AppContext';
 
 const Navbar: React.FC<{ onOpenDeposit: () => void }> = ({ onOpenDeposit }) => {
-    const { user, balance, logout } = useApp();
+    const { user, balance } = useApp();
     const navigate = useNavigate();
+    const { signOut } = useClerk();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-    const handleLogout = () => {
-        logout();
+    const handleLogout = async () => {
+        await signOut();
         navigate('/auth');
     };
 
@@ -54,23 +56,15 @@ const Navbar: React.FC<{ onOpenDeposit: () => void }> = ({ onOpenDeposit }) => {
                             </button>
                         </div>
 
-                        <div className="relative group">
-                             <div className="flex items-center gap-2 cursor-pointer">
-                                 <div className="w-8 h-8 bg-gray-800 rounded-full flex items-center justify-center text-gray-300 font-bold border border-gray-600">
-                                     {user?.name.charAt(0) || 'U'}
-                                 </div>
-                             </div>
-                             {/* Dropdown */}
-                             <div className="absolute right-0 mt-2 w-48 bg-gray-900 border border-gray-700 rounded-lg shadow-xl py-2 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity">
-                                 <div className="px-4 py-2 border-b border-gray-800">
-                                     <p className="text-white font-bold text-sm truncate">{user?.name}</p>
-                                     <p className="text-gray-500 text-xs truncate">{user?.email}</p>
-                                 </div>
-                                 <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-800">
-                                     Sign Out
-                                 </button>
-                             </div>
-                        </div>
+                        {/* Clerk User Button */}
+                        <UserButton 
+                            afterSignOutUrl="/auth"
+                            appearance={{
+                                elements: {
+                                    avatarBox: "w-8 h-8"
+                                }
+                            }}
+                        />
                     </div>
 
                     {/* Mobile Menu Button */}

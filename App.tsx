@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useOutletContext } from 'react-router-dom';
+import { SignedIn, SignedOut, SignIn, useUser } from '@clerk/clerk-react';
 import { AppProvider, useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import SlotMachine from './components/SlotMachine';
-import Auth from './pages/Auth';
 import History from './pages/History';
 import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
@@ -14,10 +14,6 @@ import DepositModal from './components/DepositModal';
 const Layout: React.FC = () => {
     const { isAuthenticated } = useApp();
     const [showDeposit, setShowDeposit] = useState(false);
-
-    if (!isAuthenticated) {
-        return <Navigate to="/auth" />;
-    }
 
     return (
         <div className="min-h-screen bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-gray-900 text-white flex flex-col font-sans selection:bg-yellow-500/50">
@@ -48,20 +44,48 @@ const GamePage: React.FC = () => {
     return <SlotMachine onOpenDeposit={triggerDeposit} />;
 };
 
+// Sign In page component
+const AuthPage: React.FC = () => {
+    return (
+        <div className="min-h-screen bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-gray-900 flex items-center justify-center">
+            <SignIn afterSignInUrl="/" />
+        </div>
+    );
+};
+
+// Protected Route wrapper
+const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    return (
+        <>
+            <SignedIn>{children}</SignedIn>
+            <SignedOut><Navigate to="/auth" replace /></SignedOut>
+        </>
+    );
+};
 
 const AppContent: React.FC = () => {
     return (
         <BrowserRouter>
             <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route element={<Layout />}>
-                    <Route path="/" element={<GamePage />} />
-                    <Route path="/history" element={<History />} />
-                    <Route path="/bonuses" element={<Bonuses />} />
-                    <Route path="/account" element={<Account />} />
-                    <Route path="/admin" element={<Admin />} />
+                {/* Auth route - only show when signed out */}
+                <Route 
+                    path="/auth" 
+                    element={
+                        <>
+                            <SignedIn><Navigate to="/" replace /></SignedIn>
+                            <SignedOut><AuthPage /></SignedOut>
+                        </>
+                    } 
+                />
+                
+                {/* Protected routes */}
+                <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                    <Route index element={<GamePage />} />
+                    <Route path="history" element={<History />} />
+                    <Route path="bonuses" element={<Bonuses />} />
+                    <Route path="account" element={<Account />} />
+                    <Route path="admin" element={<Admin />} />
                 </Route>
-                <Route path="*" element={<Navigate to="/" />} />
             </Routes>
         </BrowserRouter>
     );
