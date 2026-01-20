@@ -43,14 +43,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .returning();
 
     // Create welcome bonus transaction
-    const welcomeAmount = GAME_CONFIG?.INITIAL_BALANCE || 1000;
-    await createTransaction(
+    const welcomeAmount = GAME_CONFIG?.INITIAL_BALANCE || 100;
+    const bonusTx = await createTransaction(
       newUser.id,
       'BONUS_CREDIT',
       welcomeAmount,
       'Welcome Bonus',
       'COMPLETED'
     );
+    console.log(`Registered user ${newUser.id} - credited welcome bonus: ${welcomeAmount}`);
 
     // Generate JWT
     const token = signToken({

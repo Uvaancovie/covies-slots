@@ -8,7 +8,7 @@ export const GAME_CONFIG = {
   MIN_BET: 0.10,
   MAX_BET: 50,
   BET_INCREMENTS: [0.10, 0.20, 0.50, 1.00, 2.00, 5.00, 10.00, 25.00, 50.00],
-  INITIAL_BALANCE: 1000,
+  INITIAL_BALANCE: 100, // Welcome bonus for new users (R100)
   FREE_SPINS_RETRIGGER_CAP: 200,
 };
 
