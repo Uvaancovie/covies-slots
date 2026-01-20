@@ -5,11 +5,14 @@ import { eq } from 'drizzle-orm';
 import { hashPassword, signToken, setAuthCookie } from '../../lib/auth';
 import { generateReferralCode, createTransaction } from '../../lib/db-helpers';
 import { GAME_CONFIG } from '../../core/config';
+import { ensureServerConfigured } from '../../lib/server-config';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  if (!ensureServerConfigured(res)) return;
 
   try {
     const { email, password, name } = req.body;
@@ -72,6 +75,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     console.error('Register error:', error);
-    return res.status(500).json({ error: 'Registration failed' });
+    const message = error instanceof Error ? error.message : String(error);
+    return res.status(500).json({
+      error: 'Registration failed',
+      ...(process.env.NODE_ENV !== 'production' ? { detail: message } : {}),
+    });
   }
 }

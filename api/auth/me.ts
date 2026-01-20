@@ -4,11 +4,14 @@ import { users } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth } from '../../lib/auth';
 import { getUserBalance } from '../../lib/db-helpers';
+import { ensureServerConfigured } from '../../lib/server-config';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  if (!ensureServerConfigured(res)) return;
 
   const authUser = requireAuth(req, res);
   if (!authUser) return;
@@ -35,6 +38,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     console.error('Get user error:', error);
-    return res.status(500).json({ error: 'Failed to get user data' });
+    const message = error instanceof Error ? error.message : String(error);
+    return res.status(500).json({
+      error: 'Failed to get user data',
+      ...(process.env.NODE_ENV !== 'production' ? { detail: message } : {}),
+    });
   }
 }

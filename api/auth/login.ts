@@ -3,11 +3,14 @@ import { db } from '../../drizzle/index';
 import { users } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { verifyPassword, signToken, setAuthCookie } from '../../lib/auth';
+import { ensureServerConfigured } from '../../lib/server-config';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
+  if (!ensureServerConfigured(res)) return;
 
   try {
     const { email, password } = req.body;
@@ -52,6 +55,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({ error: 'Login failed' });
+    const message = error instanceof Error ? error.message : String(error);
+    return res.status(500).json({
+      error: 'Login failed',
+      ...(process.env.NODE_ENV !== 'production' ? { detail: message } : {}),
+    });
   }
 }
