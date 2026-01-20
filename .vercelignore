@@ -3,3 +3,11 @@ node_modules
 .env.local
 .env
 *.log
+
+# Ignore original api handler files so we stay under Hobby plan function limits
+api/**
+# Keep only the catch-all
+!api/[...slug].ts
+
+# If you add other server entry points ensure they are not ignored.
+
