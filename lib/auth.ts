@@ -39,8 +39,8 @@ export function verifyToken(token: string): JWTPayload | null {
 export function setAuthCookie(res: VercelResponse, token: string): void {
   const cookie = serialize(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true, // Always use secure in production (Render/Vercel both use HTTPS)
+    sameSite: 'none', // Required for cross-site cookies
     maxAge: 60 * 60 * 24 * 7, // 7 days
     path: '/',
   });
@@ -50,8 +50,8 @@ export function setAuthCookie(res: VercelResponse, token: string): void {
 export function clearAuthCookie(res: VercelResponse): void {
   const cookie = serialize(COOKIE_NAME, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: true,
+    sameSite: 'none',
     maxAge: 0,
     path: '/',
   });
