@@ -4,6 +4,7 @@ import { GAME_CONFIG, REEL_STRIPS } from '../core/config';
 import { audioManager } from '../core/audio'; 
 import { EvaluationResult, SymbolId } from '../types';
 import { useApp } from '../context/AppContext';
+import { API_BASE_URL } from '../lib/api-config';
 
 export const useSlotMachine = () => {
   // Use Global Context
@@ -78,8 +79,9 @@ export const useSlotMachine = () => {
 
     // Kick off the server spin immediately, but don't block UI/animation on it.
     const spinDataPromise = (async () => {
-      const resp = await fetch('/api/spin', {
+      const resp = await fetch(`${API_BASE_URL}/api/spin`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           betPerLine,

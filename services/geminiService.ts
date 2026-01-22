@@ -1,4 +1,6 @@
 
+import { API_BASE_URL } from '../lib/api-config';
+
 type LuckyStoryResponse = {
   text: string;
   source?: 'gemini' | 'cache' | 'fallback' | 'rate_limited';
@@ -43,8 +45,9 @@ function bumpCooldown(seconds: number | undefined) {
 }
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(path, {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
+    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });

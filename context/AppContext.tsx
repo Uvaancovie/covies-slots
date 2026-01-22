@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserProfile, GameHistoryItem, Transaction, EvaluationResult, UsersRegistry, SessionData, LedgerData, StorageSchema } from '../types';
 import { GAME_CONFIG } from '../core/config';
+import { API_BASE_URL } from '../lib/api-config';
 
 // LocalStorage keys
 const STORAGE_KEYS = {
@@ -47,7 +48,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const refreshUser = async () => {
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch(`${API_BASE_URL}/api/auth/me`, { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
@@ -70,8 +71,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const loadPersonalData = async () => {
     try {
       const [histRes, txRes] = await Promise.all([
-        fetch('/api/history'),
-        fetch('/api/transactions')
+        fetch(`${API_BASE_URL}/api/history`, { credentials: 'include' }),
+        fetch(`${API_BASE_URL}/api/transactions`, { credentials: 'include' })
       ]);
       
       if (histRes.ok) {
@@ -107,24 +108,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const pass = password || 'password123';
       
       // Try login first
-      let loginRes = await fetch('/api/auth/login', {
+      let loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password: pass })
       });
 
       if (!loginRes.ok) {
         // Try register if login failed (assuming it might be a new user)
-        const regRes = await fetch('/api/auth/register', {
+        const regRes = await fetch(`${API_BASE_URL}/api/auth/register`, {
           method: 'POST',
+          credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, name, password: pass })
         });
         
         if (regRes.ok) {
           // Try login again after registration
-          loginRes = await fetch('/api/auth/login', {
+          loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
             method: 'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password: pass })
           });
@@ -141,7 +145,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
       setUser(null);
       setGameHistory([]);
       setTransactions([]);
@@ -179,13 +183,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const addTransaction = async (type: Transaction['type'], amount: number, method: string) => {
     try {
-      const endpoint = type === 'DEPOSIT' ? '/api/deposit' : 
-                       type === 'WITHDRAWAL' ? '/api/withdraw' : null;
+      const endpoint = type === 'DEPOSIT' ? `${API_BASE_URL}/api/deposit` : 
+                       type === 'WITHDRAWAL' ? `${API_BASE_URL}/api/withdraw` : null;
       
       if (!endpoint) return;
 
       const res = await fetch(endpoint, {
         method: 'POST',
+        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount, method })
       });
