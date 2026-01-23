@@ -79,10 +79,14 @@ export const useSlotMachine = () => {
 
     // Kick off the server spin immediately, but don't block UI/animation on it.
     const spinDataPromise = (async () => {
+      const token = localStorage.getItem('covies.auth.token');
       const resp = await fetch(`${API_BASE_URL}/api/spin`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({
           betPerLine,
           betAmount: betPerLine,

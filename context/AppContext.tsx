@@ -9,9 +9,19 @@ const STORAGE_KEYS = {
   USERS: 'covies.users.v1',
   SESSION: 'covies.session.v1',
   LEDGER: 'covies.ledger.v1',
+  AUTH_TOKEN: 'covies.auth.token',
 };
 
 const CURRENT_SCHEMA_VERSION = 1;
+
+// Helper to get auth headers
+const getAuthHeaders = () => {
+  const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+  };
+};
 
 interface AppContextType {
   user: UserProfile | null;
@@ -48,7 +58,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const refreshUser = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/me`, { credentials: 'include' });
+      const res = await fetch(`${API_BASE_URL}/api/auth/me`, { 
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
@@ -71,8 +84,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const loadPersonalData = async () => {
     try {
       const [histRes, txRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/history`, { credentials: 'include' }),
-        fetch(`${API_BASE_URL}/api/transactions`, { credentials: 'include' })
+        fetch(`${API_BASE_URL}/api/history`, { credentials: 'include', headers: getAuthHeaders() }),
+        fetch(`${API_BASE_URL}/api/transactions`, { credentials: 'include', headers: getAuthHeaders() })
       ]);
       
       if (histRes.ok) {
@@ -125,17 +138,22 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         });
         
         if (regRes.ok) {
-          // Try login again after registration
-          loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password: pass })
-          });
+          const regData = await regRes.json();
+          // Store token from registration
+          if (regData.token) {
+            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, regData.token);
+          }
+          await refreshUser();
+          return;
         }
       }
 
       if (loginRes.ok) {
+        const loginData = await loginRes.json();
+        // Store token from login
+        if (loginData.token) {
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, loginData.token);
+        }
         await refreshUser();
       }
     } catch (err) {
@@ -145,7 +163,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+      await fetch(`${API_BASE_URL}/api/auth/logout`, { 
+        method: 'POST', 
+        credentials: 'include',
+        headers: getAuthHeaders()
+      });
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       setUser(null);
       setGameHistory([]);
       setTransactions([]);
@@ -191,12 +214,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const res = await fetch(endpoint, {
         method: 'POST',
         credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ amount, method })
       });
 
       if (res.ok) {
-        await refreshUser();
+        const data = await res.json();
+        // Update balance immediately
+        if (user && data.balance !== undefined) {
+          setUser(prev => prev ? { ...prev, balance: data.balance } : null);
+        }
+        await loadPersonalData();
       }
     } catch (err) {
       console.error('Transaction error:', err);

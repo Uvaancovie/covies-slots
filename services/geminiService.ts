@@ -45,10 +45,14 @@ function bumpCooldown(seconds: number | undefined) {
 }
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
+  const token = localStorage.getItem('covies.auth.token');
   const res = await fetch(`${API_BASE_URL}${path}`, {
     method: 'POST',
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify(body),
   });
 
