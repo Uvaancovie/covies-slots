@@ -26,37 +26,47 @@ const Controls: React.FC<ControlsProps> = ({
     onShowPaytable
 }) => {
   return (
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 bg-black/60 p-4 rounded-xl border border-yellow-900/50 backdrop-blur-md shadow-xl">
+    <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4 bg-black/60 p-3 sm:p-4 rounded-xl border border-yellow-900/50 backdrop-blur-md shadow-xl">
       
-      {/* Bet Controls */}
-      <div className="flex items-center gap-3 bg-gray-900 p-2 rounded-lg border border-gray-800 shadow-inner">
-        <button
-          onClick={() => onChangeBet('down')}
-          className="w-10 h-10 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-lg text-yellow-500 font-bold text-xl disabled:opacity-50 transition-colors border border-gray-700"
-          disabled={!canSpin || isFreeSpin || isAutoSpin}
-        >
-          -
-        </button>
-        <div className="text-center min-w-[80px]">
-          <div className="text-[9px] uppercase text-yellow-600 font-bold tracking-widest">Line Bet</div>
-          <div className="font-bold text-lg text-white">{betPerLine.toFixed(2)}</div>
+      {/* Mobile: Top row with bet controls and total bet */}
+      <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+        {/* Bet Controls */}
+        <div className="flex items-center gap-2 sm:gap-3 bg-gray-900 p-2 rounded-lg border border-gray-800 shadow-inner">
+          <button
+            onClick={() => onChangeBet('down')}
+            className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-lg text-yellow-500 font-bold text-lg sm:text-xl disabled:opacity-50 transition-colors border border-gray-700"
+            disabled={!canSpin || isFreeSpin || isAutoSpin}
+          >
+            -
+          </button>
+          <div className="text-center min-w-[60px] sm:min-w-[80px]">
+            <div className="text-[8px] sm:text-[9px] uppercase text-yellow-600 font-bold tracking-widest">Line Bet</div>
+            <div className="font-bold text-base sm:text-lg text-white">{betPerLine.toFixed(2)}</div>
+          </div>
+          <button
+            onClick={() => onChangeBet('up')}
+            className="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-lg text-yellow-500 font-bold text-lg sm:text-xl disabled:opacity-50 transition-colors border border-gray-700"
+            disabled={!canSpin || isFreeSpin || isAutoSpin}
+          >
+            +
+          </button>
         </div>
-        <button
-          onClick={() => onChangeBet('up')}
-          className="w-10 h-10 flex items-center justify-center bg-gray-800 hover:bg-gray-700 rounded-lg text-yellow-500 font-bold text-xl disabled:opacity-50 transition-colors border border-gray-700"
-          disabled={!canSpin || isFreeSpin || isAutoSpin}
-        >
-          +
-        </button>
+
+        {/* Total Bet Display - shown on mobile too */}
+        <div className="text-center sm:hidden">
+          <div className="text-[9px] uppercase text-gray-500 font-bold tracking-widest">Total Bet</div>
+          <div className="font-bold text-lg text-yellow-400">{totalBet.toFixed(2)}</div>
+        </div>
       </div>
 
-      {/* Total Bet Display */}
+      {/* Total Bet Display - desktop only */}
       <div className="hidden sm:block text-center flex-grow">
         <div className="text-[10px] uppercase text-gray-500 font-bold tracking-widest mb-1">Total Bet</div>
         <div className="font-bold text-2xl text-yellow-400 drop-shadow-md">{totalBet.toFixed(2)}</div>
       </div>
 
-      <div className="flex items-center gap-4">
+      {/* Spin controls row */}
+      <div className="flex items-center justify-center gap-3 sm:gap-4 w-full sm:w-auto">
           {/* Info Button */}
           <button 
              onClick={onShowPaytable}
@@ -70,13 +80,13 @@ const Controls: React.FC<ControlsProps> = ({
           <button
             onClick={onToggleAutoSpin}
             disabled={!canSpin && !isAutoSpin}
-            className={`px-4 py-2 rounded-lg font-bold text-[10px] uppercase tracking-widest transition-all border
+            className={`px-3 sm:px-4 py-2 rounded-lg font-bold text-[9px] sm:text-[10px] uppercase tracking-widest transition-all border
                 ${isAutoSpin 
                     ? 'bg-red-900/30 border-red-600 text-red-400 hover:bg-red-900/50 animate-pulse' 
                     : 'bg-gray-800 border-gray-600 text-gray-400 hover:border-yellow-600 hover:text-yellow-500'}
             `}
           >
-            {isAutoSpin ? 'Stop Auto' : 'Auto'}
+            {isAutoSpin ? 'Stop' : 'Auto'}
           </button>
 
           {/* Main Spin Button */}
@@ -84,18 +94,18 @@ const Controls: React.FC<ControlsProps> = ({
             onClick={onSpin}
             disabled={(!canSpin && !isAutoSpin)}
             className={`
-                w-24 h-24 sm:w-28 sm:h-28 rounded-full flex flex-col items-center justify-center transition-all duration-200 transform shadow-[0_5px_15px_rgba(0,0,0,0.5)]
+                w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 rounded-full flex flex-col items-center justify-center transition-all duration-200 transform shadow-[0_5px_15px_rgba(0,0,0,0.5)]
                 ${!canSpin && !isAutoSpin ? 'bg-gray-800 cursor-not-allowed opacity-50 grayscale border-4 border-gray-700' : 
                   isAutoSpin ? 'bg-gradient-to-br from-red-600 to-red-900 scale-95 ring-4 ring-red-500/30 border-4 border-red-500' :
                   'bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-700 hover:scale-105 active:scale-95 hover:shadow-[0_0_30px_rgba(234,179,8,0.4)] border-4 border-yellow-300 ring-4 ring-yellow-900/50'}
             `}
           >
             {isAutoSpin ? (
-                <span className="font-black text-white text-lg tracking-widest">STOP</span>
+                <span className="font-black text-white text-base sm:text-lg tracking-widest">STOP</span>
             ) : (
                 <>
-                    <SpinnerIcon className={`w-10 h-10 sm:w-12 sm:h-12 ${isFreeSpin ? 'text-white animate-spin' : 'text-black'}`} />
-                    <span className={`font-black text-lg sm:text-xl uppercase tracking-widest mt-1 ${isFreeSpin ? 'text-white' : 'text-black'}`}>
+                    <SpinnerIcon className={`w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 ${isFreeSpin ? 'text-white animate-spin' : 'text-black'}`} />
+                    <span className={`font-black text-sm sm:text-lg md:text-xl uppercase tracking-widest mt-1 ${isFreeSpin ? 'text-white' : 'text-black'}`}>
                         {isFreeSpin ? 'FREE' : 'SPIN'}
                     </span>
                 </>

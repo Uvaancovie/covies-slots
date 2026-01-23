@@ -75,65 +75,65 @@ const DisplayPanel: React.FC<DisplayPanelProps> = ({ balance, totalBet, lastWin,
   }, [lastWin, isSpinning]);
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="mt-3 sm:mt-4 space-y-2 sm:space-y-3">
         {/* Main display grid */}
-        <div className="grid grid-cols-3 gap-4 text-center relative z-20">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4 text-center relative z-20">
         {/* Balance */}
         <div className={`
-            bg-black p-3 rounded-lg border transition-all duration-300 relative overflow-hidden group flex flex-col justify-center items-center
+            bg-black p-2 sm:p-3 rounded-lg border transition-all duration-300 relative overflow-hidden group flex flex-col justify-center items-center
             ${balanceHighlight ? 'border-yellow-400 scale-105 shadow-[0_0_20px_rgba(234,179,8,0.3)]' : 'border-yellow-900/50'}
         `}>
              <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/10 to-transparent opacity-50"></div>
             
              <div className="relative z-10 w-full flex flex-col items-center">
                 <div className="flex items-center justify-center w-full relative">
-                    <h3 className="text-[10px] font-bold uppercase text-yellow-600 tracking-[0.2em] mb-1">Balance</h3>
+                    <h3 className="text-[8px] sm:text-[10px] font-bold uppercase text-yellow-600 tracking-[0.15em] sm:tracking-[0.2em] mb-1">Balance</h3>
                     
                     {/* Deposit Button */}
                     <button 
                         onClick={onOpenDeposit}
-                        className="absolute right-0 top-0 -mt-1 -mr-1 w-5 h-5 bg-green-700 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold shadow-lg transition-transform hover:scale-110 active:scale-95"
+                        className="absolute right-0 top-0 -mt-1 -mr-1 w-4 h-4 sm:w-5 sm:h-5 bg-green-700 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold shadow-lg transition-transform hover:scale-110 active:scale-95"
                         title="Deposit Funds"
                     >
                         +
                     </button>
                 </div>
                 
-                <p className="text-xl sm:text-2xl font-bold text-white tracking-tight font-mono">
-                    {balance.toFixed(2)} <span className="text-xs text-yellow-600/50">ZAR</span>
+                <p className="text-base sm:text-xl md:text-2xl font-bold text-white tracking-tight font-mono">
+                    {balance.toFixed(2)} <span className="hidden sm:inline text-xs text-yellow-600/50">ZAR</span>
                 </p>
              </div>
         </div>
 
         {/* Win Streak */}
         <div className={`
-            bg-black p-3 rounded-lg border transition-all duration-300 relative overflow-hidden flex flex-col justify-center items-center
+            bg-black p-2 sm:p-3 rounded-lg border transition-all duration-300 relative overflow-hidden flex flex-col justify-center items-center
             ${winStreak > 1 ? 'border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)]' : 'border-gray-800'}
         `}>
             <div className={`absolute inset-0 bg-gradient-to-b from-orange-900/20 to-transparent opacity-50 ${winStreak > 1 ? 'animate-pulse' : ''}`}></div>
-            <h3 className="text-[10px] font-bold uppercase text-orange-500 tracking-[0.2em] mb-1 relative z-10 flex justify-center items-center gap-1">
+            <h3 className="text-[8px] sm:text-[10px] font-bold uppercase text-orange-500 tracking-[0.15em] sm:tracking-[0.2em] mb-1 relative z-10 flex justify-center items-center gap-1">
                 Streak {winStreak > 1 && <span className="animate-bounce">🔥</span>}
             </h3>
-            <p className={`text-xl sm:text-2xl font-bold tracking-tight font-mono relative z-10 ${winStreak > 1 ? 'text-orange-400' : 'text-gray-600'}`}>
+            <p className={`text-base sm:text-xl md:text-2xl font-bold tracking-tight font-mono relative z-10 ${winStreak > 1 ? 'text-orange-400' : 'text-gray-600'}`}>
                 {winStreak}
             </p>
         </div>
 
         {/* Win */}
         <div className={`
-            bg-black p-3 rounded-lg border transition-all duration-300 relative overflow-hidden flex flex-col justify-center items-center
+            bg-black p-2 sm:p-3 rounded-lg border transition-all duration-300 relative overflow-hidden flex flex-col justify-center items-center
             ${lastWin > 0 && !isSpinning ? 'border-yellow-400 bg-yellow-900/20 shadow-[0_0_30px_rgba(234,179,8,0.2)]' : 'border-yellow-900/50'}
         `}>
             <div className="absolute inset-0 bg-gradient-to-b from-yellow-900/10 to-transparent opacity-50"></div>
-            <h3 className="text-[10px] font-bold uppercase text-yellow-600 tracking-[0.2em] mb-1 relative z-10">Last Win</h3>
-            <p className={`text-xl sm:text-2xl font-bold tracking-tight font-mono relative z-10 ${lastWin > 0 ? 'text-yellow-400 scale-110 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]' : 'text-gray-700'}`}>
-                {displayedWin.toFixed(2)} <span className="text-xs opacity-50">ZAR</span>
+            <h3 className="text-[8px] sm:text-[10px] font-bold uppercase text-yellow-600 tracking-[0.15em] sm:tracking-[0.2em] mb-1 relative z-10">Last Win</h3>
+            <p className={`text-base sm:text-xl md:text-2xl font-bold tracking-tight font-mono relative z-10 ${lastWin > 0 ? 'text-yellow-400 scale-110 drop-shadow-[0_0_5px_rgba(234,179,8,0.5)]' : 'text-gray-700'}`}>
+                {displayedWin.toFixed(2)} <span className="hidden sm:inline text-xs opacity-50">ZAR</span>
             </p>
         </div>
     </div>
 
-    {/* Winnings explainer (on-display) */}
-    <div className="flex items-center justify-between gap-3 bg-black/60 p-3 rounded-lg border border-yellow-900/40">
+    {/* Winnings explainer (on-display) - hidden on very small screens */}
+    <div className="hidden sm:flex items-center justify-between gap-3 bg-black/60 p-3 rounded-lg border border-yellow-900/40">
       <div className="flex items-start gap-2 text-xs text-gray-200 leading-snug">
         <SparkleIcon className="w-4 h-4 text-yellow-300 flex-shrink-0 mt-0.5" />
         <div>
