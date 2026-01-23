@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useOutletContext } from 'react-router-dom';
-import { SignedIn, SignedOut, SignIn, useUser } from '@clerk/clerk-react';
 import { AppProvider, useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import SlotMachine from './components/SlotMachine';
@@ -9,6 +8,7 @@ import History from './pages/History';
 import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
 import Account from './pages/Account';
+import Auth from './pages/Auth';
 import DepositModal from './components/DepositModal';
 
 const Layout: React.FC = () => {
@@ -44,38 +44,27 @@ const GamePage: React.FC = () => {
     return <SlotMachine onOpenDeposit={triggerDeposit} />;
 };
 
-// Sign In page component
-const AuthPage: React.FC = () => {
-    return (
-        <div className="min-h-screen bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-gray-900 flex items-center justify-center">
-            <SignIn afterSignInUrl="/" />
-        </div>
-    );
-};
-
-// Protected Route wrapper
+// Protected Route wrapper using custom auth
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    return (
-        <>
-            <SignedIn>{children}</SignedIn>
-            <SignedOut><Navigate to="/auth" replace /></SignedOut>
-        </>
-    );
+    const { isAuthenticated } = useApp();
+    
+    if (!isAuthenticated) {
+        return <Navigate to="/auth" replace />;
+    }
+    
+    return <>{children}</>;
 };
 
 const AppContent: React.FC = () => {
+    const { isAuthenticated } = useApp();
+    
     return (
         <BrowserRouter>
             <Routes>
-                {/* Auth route - only show when signed out */}
+                {/* Auth route - redirect to home if already logged in */}
                 <Route 
                     path="/auth" 
-                    element={
-                        <>
-                            <SignedIn><Navigate to="/" replace /></SignedIn>
-                            <SignedOut><AuthPage /></SignedOut>
-                        </>
-                    } 
+                    element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPage />} 
                 />
                 
                 {/* Protected routes */}
@@ -88,6 +77,15 @@ const AppContent: React.FC = () => {
                 </Route>
             </Routes>
         </BrowserRouter>
+    );
+};
+
+// Auth page wrapper with proper styling
+const AuthPage: React.FC = () => {
+    return (
+        <div className="min-h-screen bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-900 via-black to-gray-900 flex items-center justify-center">
+            <Auth />
+        </div>
     );
 };
 

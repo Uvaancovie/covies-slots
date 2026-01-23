@@ -1,17 +1,15 @@
 
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { UserButton, useClerk } from '@clerk/clerk-react';
 import { useApp } from '../context/AppContext';
 
 const Navbar: React.FC<{ onOpenDeposit: () => void }> = ({ onOpenDeposit }) => {
-    const { user, balance } = useApp();
+    const { user, balance, logout } = useApp();
     const navigate = useNavigate();
-    const { signOut } = useClerk();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const handleLogout = async () => {
-        await signOut();
+        await logout();
         navigate('/auth');
     };
 
@@ -56,15 +54,18 @@ const Navbar: React.FC<{ onOpenDeposit: () => void }> = ({ onOpenDeposit }) => {
                             </button>
                         </div>
 
-                        {/* Clerk User Button */}
-                        <UserButton 
-                            afterSignOutUrl="/auth"
-                            appearance={{
-                                elements: {
-                                    avatarBox: "w-8 h-8"
-                                }
-                            }}
-                        />
+                        {/* User Menu */}
+                        <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-yellow-700 flex items-center justify-center font-black text-black text-sm">
+                                {user?.name?.charAt(0).toUpperCase() || 'U'}
+                            </div>
+                            <button 
+                                onClick={handleLogout}
+                                className="text-gray-400 hover:text-red-400 text-xs font-bold uppercase"
+                            >
+                                Sign Out
+                            </button>
+                        </div>
                     </div>
 
                     {/* Mobile Menu Button */}

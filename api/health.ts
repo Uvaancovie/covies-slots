@@ -12,7 +12,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const result: any = {
     serverTime: new Date().toISOString(),
     missingEnv: missing,
-    clerkSecretPresent: Boolean(process.env.CLERK_SECRET_KEY),
+    jwtSecretPresent: Boolean(process.env.JWT_SECRET),
     database: { reachable: false, detail: null },
   };
 
