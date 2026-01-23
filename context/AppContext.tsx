@@ -32,7 +32,8 @@ interface AppContextType {
   allUsers: UserProfile[];
   allGameHistory: GameHistoryItem[];
   allTransactions: Transaction[];
-  login: (email: string, name: string, isAdmin?: boolean) => void;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (email: string, name: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   switchUser: (userId: string) => void;
   updateBalance: (amount: number, type?: 'GAME' | 'DEPOSIT' | 'WITHDRAWAL') => void;
@@ -116,37 +117,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Admin endpoints not fully implemented yet, but placeholders
   };
 
-  const login = async (email: string, name: string, password?: string) => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const pass = password || 'password123';
-      
-      // Try login first
-      let loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const loginRes = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: pass })
+        body: JSON.stringify({ email, password })
       });
-
-      if (!loginRes.ok) {
-        // Try register if login failed (assuming it might be a new user)
-        const regRes = await fetch(`${API_BASE_URL}/api/auth/register`, {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, name, password: pass })
-        });
-        
-        if (regRes.ok) {
-          const regData = await regRes.json();
-          // Store token from registration
-          if (regData.token) {
-            localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, regData.token);
-          }
-          await refreshUser();
-          return;
-        }
-      }
 
       if (loginRes.ok) {
         const loginData = await loginRes.json();
@@ -155,9 +133,41 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, loginData.token);
         }
         await refreshUser();
+        return { success: true };
+      } else {
+        const errorData = await loginRes.json().catch(() => ({ error: 'Login failed' }));
+        return { success: false, error: errorData.error || 'Invalid credentials' };
       }
     } catch (err) {
       console.error('Login error:', err);
+      return { success: false, error: 'Network error' };
+    }
+  };
+
+  const register = async (email: string, name: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const regRes = await fetch(`${API_BASE_URL}/api/auth/register`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, password })
+      });
+
+      if (regRes.ok) {
+        const regData = await regRes.json();
+        // Store token from registration
+        if (regData.token) {
+          localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, regData.token);
+        }
+        await refreshUser();
+        return { success: true };
+      } else {
+        const errorData = await regRes.json().catch(() => ({ error: 'Registration failed' }));
+        return { success: false, error: errorData.error || 'Registration failed' };
+      }
+    } catch (err) {
+      console.error('Register error:', err);
+      return { success: false, error: 'Network error' };
     }
   };
 
@@ -245,6 +255,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       allGameHistory,
       allTransactions,
       login,
+      register,
       logout,
       switchUser,
       updateBalance,

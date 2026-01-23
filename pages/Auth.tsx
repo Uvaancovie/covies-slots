@@ -4,17 +4,38 @@ import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 
 const Auth: React.FC = () => {
-    const { login } = useApp();
+    const { login, register } = useApp();
     const navigate = useNavigate();
     const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [name, setName] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        await login(email, name || email.split('@')[0], password);
-        navigate('/');
+        setError('');
+        setLoading(true);
+        
+        try {
+            let result;
+            if (isLogin) {
+                result = await login(email, password);
+            } else {
+                result = await register(email, name || email.split('@')[0], password);
+            }
+            
+            if (result.success) {
+                navigate('/');
+            } else {
+                setError(result.error || 'Authentication failed');
+            }
+        } catch (err) {
+            setError('An unexpected error occurred');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -67,11 +88,18 @@ const Auth: React.FC = () => {
                             />
                         </div>
 
+                        {error && (
+                            <div className="bg-red-900/50 border border-red-500 text-red-300 px-4 py-2 rounded-lg text-sm">
+                                {error}
+                            </div>
+                        )}
+
                         <button 
                             type="submit"
-                            className="w-full bg-gradient-to-r from-yellow-600 to-yellow-800 text-black font-black uppercase tracking-widest py-4 rounded-lg hover:from-yellow-500 hover:to-yellow-700 transition-all mt-4"
+                            disabled={loading}
+                            className="w-full bg-gradient-to-r from-yellow-600 to-yellow-800 text-black font-black uppercase tracking-widest py-4 rounded-lg hover:from-yellow-500 hover:to-yellow-700 transition-all mt-4 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {isLogin ? 'Sign In' : 'Create Account'}
+                            {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
                         </button>
                     </form>
 
