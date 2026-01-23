@@ -12,14 +12,18 @@ dotenv.config({ path: path.resolve(process.cwd(), '.env.local'), override: true 
 const PORT = Number(process.env.PORT || 5174);
 const app = express();
 
-// Enable CORS for Vercel frontend
+// Enable CORS for Vercel frontend and Render backend
 app.use(cors({
   origin: [
-    'https://covies-slots.vercel.app', 
+    'https://covies-slots.vercel.app',
+    'https://covies-slots.onrender.com',
     'http://localhost:5173', 
     'http://localhost:3000'
   ],
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie']
 }));
 
 app.use(express.json({ limit: '256kb' }));
