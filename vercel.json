@@ -13,8 +13,7 @@
   "functions": {
     "api/**/*.ts": {
       "memory": 512,
-      "maxDuration": 10,
-      "runtime": "nodejs@20.x"
+      "maxDuration": 10
     }
   },
   "headers": [
