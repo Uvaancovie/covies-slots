@@ -11,7 +11,7 @@
   "installCommand": "npm install",
   "outputDirectory": "dist",
   "functions": {
-    "api/**/*.ts": {
+    "api/[...slug].ts": {
       "memory": 512,
       "maxDuration": 10
     }
