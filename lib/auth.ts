@@ -2,10 +2,17 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { serialize, parse } from 'cookie';
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { cache, CACHE_TTL, cacheKeys } from './cache';
 
 const JWT_SECRET = process.env.JWT_SECRET || '8f3a2c9b6e1d4f7a0c5e8b2a1d9c3f6e7b0a4d2c8e1f5a9b3c7d0e6f1a2b4c8d9e0f7a1b3c5d7e9f0a2c4e6b8d1f3a5c7e9b0d2f4a6c8e1';
 const JWT_EXPIRES_IN = '7d';
 const COOKIE_NAME = 'auth_token';
+
+// ⚡ Optimized JWT settings for faster token generation
+const JWT_OPTIONS = {
+  algorithm: 'HS256' as const, // Fastest signing algorithm
+  expiresIn: JWT_EXPIRES_IN,
+};
 
 export interface JWTPayload {
   userId: string;
@@ -24,12 +31,22 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 
 // JWT utilities
 export function signToken(payload: JWTPayload): string {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  return jwt.sign(payload, JWT_SECRET, JWT_OPTIONS);
 }
 
 export function verifyToken(token: string): JWTPayload | null {
+  // ⚡ Check cache first for sub-10ms validation
+  const cacheKey = cacheKeys.session(token);
+  const cached = cache.get<JWTPayload>(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
   try {
-    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+    const payload = jwt.verify(token, JWT_SECRET) as JWTPayload;
+    // Cache valid tokens for faster subsequent checks
+    cache.set(cacheKey, payload, CACHE_TTL.SESSION);
+    return payload;
   } catch {
     return null;
   }

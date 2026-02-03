@@ -15,11 +15,14 @@ if (!url) {
   );
 }
 
+console.log('Using database URL for migrations:', url.replace(/:.*@/, ':***@'));
+
 export default {
-  schema: './drizzle/schema.tsx',
+  schema: './drizzle/schema.ts',
   out: './drizzle/migrations',
   dialect: 'postgresql',
   dbCredentials: {
     url,
   },
+  verbose: true,
 } satisfies Config;

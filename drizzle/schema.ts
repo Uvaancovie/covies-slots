@@ -1,5 +1,4 @@
-
-import { pgTable, serial, text, varchar, timestamp, integer, decimal, boolean, jsonb, uuid } from 'drizzle-orm/pg-core';
+import { pgTable, serial, text, varchar, timestamp, integer, decimal, boolean, jsonb, uuid, index } from 'drizzle-orm/pg-core';
 
 // Users table - Option B auth (no Supabase Auth)
 export const users = pgTable('users', {
@@ -12,7 +11,10 @@ export const users = pgTable('users', {
   joinedDate: timestamp('joined_date').notNull().defaultNow(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  // ⚡ Performance index
+  emailIdx: index('users_email_idx').on(table.email),
+}));
 
 // Sessions table - for JWT tracking and revocation
 export const sessions = pgTable('sessions', {
@@ -21,7 +23,11 @@ export const sessions = pgTable('sessions', {
   token: text('token').notNull().unique(),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  // ⚡ Performance indexes
+  userIdIdx: index('sessions_user_id_idx').on(table.userId),
+  tokenIdx: index('sessions_token_idx').on(table.token),
+}));
 
 // Transactions table - ledger for all balance changes
 export const transactions = pgTable('transactions', {
@@ -34,7 +40,12 @@ export const transactions = pgTable('transactions', {
   status: varchar('status', { length: 50 }).notNull().default('COMPLETED'), // PENDING, COMPLETED, FAILED
   metadata: jsonb('metadata'), // flexible field for additional data
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  // ⚡ Performance indexes - critical for balance queries
+  userIdIdx: index('transactions_user_id_idx').on(table.userId),
+  createdAtIdx: index('transactions_created_at_idx').on(table.createdAt),
+  userIdCreatedAtIdx: index('transactions_user_id_created_at_idx').on(table.userId, table.createdAt),
+}));
 
 // Game rounds/history table - one row per spin
 export const gameRounds = pgTable('game_rounds', {
@@ -47,7 +58,11 @@ export const gameRounds = pgTable('game_rounds', {
   resultGrid: jsonb('result_grid').notNull(), // stores EvaluationResult
   userBonusClaimId: uuid('user_bonus_claim_id').references(() => userBonusClaims.id), // link to bonus if free spin
   createdAt: timestamp('created_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  // ⚡ Performance indexes
+  userIdIdx: index('game_rounds_user_id_idx').on(table.userId),
+  createdAtIdx: index('game_rounds_created_at_idx').on(table.createdAt),
+}));
 
 // Bonuses table - configurable bonus definitions
 export const bonuses = pgTable('bonuses', {
@@ -77,5 +92,10 @@ export const userBonusClaims = pgTable('user_bonus_claims', {
   expiresAt: timestamp('expires_at'),
   claimedAt: timestamp('claimed_at').notNull().defaultNow(),
   completedAt: timestamp('completed_at'),
-});
+}, (table) => ({
+  // ⚡ Performance indexes - critical for active bonus lookup
+  userIdIdx: index('user_bonus_claims_user_id_idx').on(table.userId),
+  statusIdx: index('user_bonus_claims_status_idx').on(table.status),
+  userIdStatusIdx: index('user_bonus_claims_user_id_status_idx').on(table.userId, table.status),
+}));
         

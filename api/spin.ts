@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { requireAuth } from '../lib/auth';
 import { createTransaction, getUserBalance } from '../lib/db-helpers';
 import { SlotGameEngine } from '../core/evaluator';
+import { cache, CACHE_TTL, cacheKeys } from '../lib/cache';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -27,26 +28,35 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let userBonusClaimId: string | null = null;
     let multiplier = 1;
 
-    // Read balance once up-front; we keep a running balance and avoid re-summing the ledger.
+    // ⚡ Read balance once up-front; we keep a running balance and avoid re-summing the ledger.
     let runningBalance = await getUserBalance(authUser.userId);
 
-    // Check for active free spins bonus (only if needed to avoid DB query on every spin)
+    // ⚡ Check for active free spins bonus with caching
     let activeFreeSpinsBonus = null;
     
     // Skip free spins check if we know balance is sufficient (optimization)
     if (runningBalance < totalBet) {
-      const [bonus] = await db
-        .select()
-        .from(userBonusClaims)
-        .where(
-          and(
-            eq(userBonusClaims.userId, authUser.userId),
-            eq(userBonusClaims.status, 'ACTIVE')
-          )
-        )
-        .limit(1);
+      const bonusCacheKey = cacheKeys.activeBonus(authUser.userId);
+      const cachedBonus = cache.get<any>(bonusCacheKey);
       
-      activeFreeSpinsBonus = bonus;
+      if (cachedBonus !== null) {
+        activeFreeSpinsBonus = cachedBonus;
+      } else {
+        const [bonus] = await db
+          .select()
+          .from(userBonusClaims)
+          .where(
+            and(
+              eq(userBonusClaims.userId, authUser.userId),
+              eq(userBonusClaims.status, 'ACTIVE')
+            )
+          )
+          .limit(1);
+        
+        activeFreeSpinsBonus = bonus || null;
+        // Cache active bonus for 1 minute
+        cache.set(bonusCacheKey, activeFreeSpinsBonus, CACHE_TTL.BONUS);
+      }
     }
 
     if (activeFreeSpinsBonus && activeFreeSpinsBonus.freeSpinsRemaining && activeFreeSpinsBonus.freeSpinsRemaining > 0) {
@@ -65,6 +75,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           completedAt: remaining === 0 ? new Date() : null,
         })
         .where(eq(userBonusClaims.id, activeFreeSpinsBonus.id));
+      
+      // ⚡ Invalidate bonus cache after update
+      cache.delete(cacheKeys.activeBonus(authUser.userId));
     } else {
       // Regular spin - check balance
       if (runningBalance < totalBet) {

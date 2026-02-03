@@ -21,6 +21,11 @@ function getClient() {
     _client = postgres(connectionString, {
       prepare: false,
       ssl: 'require',
+      // ⚡ Optimized connection pool settings for serverless
+      max: 1, // Serverless: single connection per function instance
+      idle_timeout: 20, // Close idle connections quickly
+      connect_timeout: 10, // Fast connection timeout
+      max_lifetime: 60 * 30, // 30 minutes max connection lifetime
     });
   }
   return _client;

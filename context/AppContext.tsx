@@ -23,6 +23,22 @@ const getAuthHeaders = () => {
   };
 };
 
+// ⚡ Request deduplication cache to prevent duplicate API calls
+const pendingRequests = new Map<string, Promise<any>>();
+
+const deduplicatedFetch = async (key: string, fetchFn: () => Promise<Response>): Promise<Response> => {
+  if (pendingRequests.has(key)) {
+    return pendingRequests.get(key)!;
+  }
+
+  const promise = fetchFn().finally(() => {
+    pendingRequests.delete(key);
+  });
+
+  pendingRequests.set(key, promise);
+  return promise;
+};
+
 interface AppContextType {
   user: UserProfile | null;
   balance: number;
@@ -57,12 +73,73 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     refreshUser();
   }, []);
 
+  // ⚡ Smart balance polling - only poll when user is authenticated and active
+  useEffect(() => {
+    if (!user) return;
+
+    let pollInterval: NodeJS.Timeout | null = null;
+    let isActive = true;
+    
+    // Detect user activity
+    const handleActivity = () => {
+      isActive = true;
+    };
+    
+    // Poll balance more frequently when active, less when idle
+    const startPolling = () => {
+      const pollBalance = async () => {
+        if (!isActive) return;
+        
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/wallet`, {
+            credentials: 'include',
+            headers: getAuthHeaders()
+          });
+          
+          if (res.ok) {
+            const data = await res.json();
+            if (data.balance !== undefined) {
+              setUser(prev => prev ? { ...prev, balance: data.balance } : null);
+            }
+          }
+        } catch (err) {
+          // Silently fail - not critical
+        }
+        
+        // Mark as inactive after successful poll
+        isActive = false;
+      };
+      
+      // Poll every 10 seconds (only executes if user is active)
+      pollInterval = setInterval(pollBalance, 10000);
+    };
+    
+    // Listen for user activity
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    window.addEventListener('click', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
+    
+    startPolling();
+    
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('click', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
+    };
+  }, [user?.id]);
+
   const refreshUser = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/auth/me`, { 
-        credentials: 'include',
-        headers: getAuthHeaders()
-      });
+      // ⚡ Deduplicate user refresh requests
+      const res = await deduplicatedFetch('user:me', () => 
+        fetch(`${API_BASE_URL}/api/auth/me`, { 
+          credentials: 'include',
+          headers: getAuthHeaders()
+        })
+      );
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
@@ -84,9 +161,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const loadPersonalData = async () => {
     try {
+      // ⚡ Deduplicate parallel data loading requests
       const [histRes, txRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/history`, { credentials: 'include', headers: getAuthHeaders() }),
-        fetch(`${API_BASE_URL}/api/transactions`, { credentials: 'include', headers: getAuthHeaders() })
+        deduplicatedFetch('history', () => 
+          fetch(`${API_BASE_URL}/api/history`, { credentials: 'include', headers: getAuthHeaders() })
+        ),
+        deduplicatedFetch('transactions', () => 
+          fetch(`${API_BASE_URL}/api/transactions`, { credentials: 'include', headers: getAuthHeaders() })
+        )
       ]);
       
       if (histRes.ok) {
