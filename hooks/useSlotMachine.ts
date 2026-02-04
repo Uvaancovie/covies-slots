@@ -1,25 +1,26 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { GAME_CONFIG, REEL_STRIPS } from '../core/config';
-import { audioManager } from '../core/audio'; 
+import { audioManager } from '../core/audio';
 import { EvaluationResult, SymbolId } from '../types';
+import { evaluateSpin } from '../core/evaluator';
 import { useApp } from '../context/AppContext';
 import { API_BASE_URL } from '../lib/api-config';
 
 export const useSlotMachine = () => {
   // Use Global Context
-  const { balance, updateBalance, addGameHistory } = useApp();
+  const { user, balance, updateBalance, addGameHistory } = useApp();
 
   const [reels, setReels] = useState<SymbolId[][]>(() =>
     Array(GAME_CONFIG.NUM_REELS).fill(0).map((_, i) => {
-        const initialSymbols = [];
-        for(let r = 0; r < GAME_CONFIG.NUM_ROWS; r++) {
-            initialSymbols.push(REEL_STRIPS[i][r % REEL_STRIPS[i].length]);
-        }
-        return initialSymbols;
+      const initialSymbols = [];
+      for (let r = 0; r < GAME_CONFIG.NUM_ROWS; r++) {
+        initialSymbols.push(REEL_STRIPS[i][r % REEL_STRIPS[i].length]);
+      }
+      return initialSymbols;
     })
   );
-  
+
   const [spinningReels, setSpinningReels] = useState<boolean[]>(
     Array(GAME_CONFIG.NUM_REELS).fill(false)
   );
@@ -35,13 +36,13 @@ export const useSlotMachine = () => {
   const isSpinning = spinningReels.some(s => s);
 
   const canSpin = useMemo(() => {
-      return !isSpinning && (freeSpins.remaining > 0 || balance >= totalBet);
+    return !isSpinning && (freeSpins.remaining > 0 || balance >= totalBet);
   }, [isSpinning, balance, totalBet, freeSpins.remaining]);
 
   // Helper to add balance (via context)
   const addBalance = useCallback((amount: number) => {
     updateBalance(amount);
-    if (amount > 0) audioManager.playWin(amount); 
+    if (amount > 0) audioManager.playWin(amount);
   }, [updateBalance]);
 
   // Auto Spin Logic
@@ -51,10 +52,10 @@ export const useSlotMachine = () => {
       const delay = (lastResult && lastResult.totalWin > 0) ? 5000 : 2000;
       timer = setTimeout(() => spin(), delay);
     } else if (autoSpin && !canSpin && !isSpinning) {
-      setAutoSpin(false); 
+      setAutoSpin(false);
     }
     return () => clearTimeout(timer);
-  }, [autoSpin, isSpinning, canSpin, lastResult]); 
+  }, [autoSpin, isSpinning, canSpin, lastResult]);
 
   const spin = useCallback(async () => {
     if (!canSpin && !autoSpin) return;
@@ -70,20 +71,49 @@ export const useSlotMachine = () => {
 
     // Handle Costs
     if (freeSpins.remaining > 0) {
-      setFreeSpins(prev => ({...prev, remaining: prev.remaining - 1}));
+      setFreeSpins(prev => ({ ...prev, remaining: prev.remaining - 1 }));
       // Multiplier logic might need to be server-side soon too, 
       // but for now we follow the existing pattern or move it to API
     } else {
       spinCost = totalBet;
     }
 
-    // Kick off the server spin immediately, but don't block UI/animation on it.
+    // Kick off the spin
     const spinDataPromise = (async () => {
       const token = localStorage.getItem('covies.auth.token');
+      const isGuest = user?.id?.startsWith('guest_');
+
+      if (isGuest || !token) {
+        // Guest Mode: Run logic locally
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate network latency
+
+        const result = evaluateSpin(betPerLine, totalBet);
+
+        // Calculate new balance locally
+        // Note: Logic in 'then' block will subtract spinCost from current balance (which might be old),
+        // then add the difference of newBalance - oldBalance. 
+        // Actually, the logic below handles: `updateBalance(newBalance - balance)`
+        // So we need to emulate what the server returns as "newBalance".
+        // Server logic: newBalance = currentBalance - totalBet + totalWin
+        const newBalance = (balance - spinCost) + result.totalWin;
+
+        const finalReels: SymbolId[][] = [];
+        for (let c = 0; c < GAME_CONFIG.NUM_REELS; c++) {
+          const col: SymbolId[] = [];
+          for (let r = 0; r < GAME_CONFIG.NUM_ROWS; r++) {
+            col.push(result.grid[r][c]);
+          }
+          finalReels.push(col);
+        }
+
+        return { result, finalReels, newBalance };
+      }
+
+      // Valid User: Call Server
       const resp = await fetch(`${API_BASE_URL}/api/spin`, {
         method: 'POST',
         credentials: 'include',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },

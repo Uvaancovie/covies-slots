@@ -55,6 +55,7 @@ interface AppContextType {
   updateBalance: (amount: number, type?: 'GAME' | 'DEPOSIT' | 'WITHDRAWAL') => void;
   addGameHistory: (bet: number, win: number, result: EvaluationResult, isFreeSpin?: boolean, multiplier?: number) => void;
   addTransaction: (type: Transaction['type'], amount: number, method: string) => void;
+  continueAsGuest: () => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -79,23 +80,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     let pollInterval: NodeJS.Timeout | null = null;
     let isActive = true;
-    
+
     // Detect user activity
     const handleActivity = () => {
       isActive = true;
     };
-    
+
     // Poll balance more frequently when active, less when idle
     const startPolling = () => {
       const pollBalance = async () => {
         if (!isActive) return;
-        
+
         try {
           const res = await fetch(`${API_BASE_URL}/api/wallet`, {
             credentials: 'include',
             headers: getAuthHeaders()
           });
-          
+
           if (res.ok) {
             const data = await res.json();
             if (data.balance !== undefined) {
@@ -105,23 +106,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         } catch (err) {
           // Silently fail - not critical
         }
-        
+
         // Mark as inactive after successful poll
         isActive = false;
       };
-      
+
       // Poll every 10 seconds (only executes if user is active)
       pollInterval = setInterval(pollBalance, 10000);
     };
-    
+
     // Listen for user activity
     window.addEventListener('mousemove', handleActivity);
     window.addEventListener('keydown', handleActivity);
     window.addEventListener('click', handleActivity);
     window.addEventListener('touchstart', handleActivity);
-    
+
     startPolling();
-    
+
     return () => {
       if (pollInterval) clearInterval(pollInterval);
       window.removeEventListener('mousemove', handleActivity);
@@ -134,8 +135,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const refreshUser = async () => {
     try {
       // ⚡ Deduplicate user refresh requests
-      const res = await deduplicatedFetch('user:me', () => 
-        fetch(`${API_BASE_URL}/api/auth/me`, { 
+      const res = await deduplicatedFetch('user:me', () =>
+        fetch(`${API_BASE_URL}/api/auth/me`, {
           credentials: 'include',
           headers: getAuthHeaders()
         })
@@ -143,7 +144,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
-        
+
         // Also load history/transactions if authenticated
         if (data.user) {
           loadPersonalData();
@@ -163,14 +164,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     try {
       // ⚡ Deduplicate parallel data loading requests
       const [histRes, txRes] = await Promise.all([
-        deduplicatedFetch('history', () => 
+        deduplicatedFetch('history', () =>
           fetch(`${API_BASE_URL}/api/history`, { credentials: 'include', headers: getAuthHeaders() })
         ),
-        deduplicatedFetch('transactions', () => 
+        deduplicatedFetch('transactions', () =>
           fetch(`${API_BASE_URL}/api/transactions`, { credentials: 'include', headers: getAuthHeaders() })
         )
       ]);
-      
+
       if (histRes.ok) {
         const data = await histRes.json();
         setGameHistory(data.history.map((h: any) => ({
@@ -181,7 +182,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           result: h.resultGrid
         })));
       }
-      
+
       if (txRes.ok) {
         const data = await txRes.json();
         setTransactions(data.transactions.map((t: any) => ({
@@ -255,8 +256,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = async () => {
     try {
-      await fetch(`${API_BASE_URL}/api/auth/logout`, { 
-        method: 'POST', 
+      await fetch(`${API_BASE_URL}/api/auth/logout`, {
+        method: 'POST',
         credentials: 'include',
         headers: getAuthHeaders()
       });
@@ -298,9 +299,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const addTransaction = async (type: Transaction['type'], amount: number, method: string) => {
     try {
-      const endpoint = type === 'DEPOSIT' ? `${API_BASE_URL}/api/deposit` : 
-                       type === 'WITHDRAWAL' ? `${API_BASE_URL}/api/withdraw` : null;
-      
+      const endpoint = type === 'DEPOSIT' ? `${API_BASE_URL}/api/deposit` :
+        type === 'WITHDRAWAL' ? `${API_BASE_URL}/api/withdraw` : null;
+
       if (!endpoint) return;
 
       const res = await fetch(endpoint, {
@@ -323,6 +324,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const continueAsGuest = async () => {
+    // Clear any existing auth
+    localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+
+    // Create guest user
+    const guestUser: UserProfile = {
+      id: `guest_${Date.now()}`,
+      name: 'Guest Player',
+      email: '',
+      referralCode: '',
+      joinedDate: new Date().toISOString(),
+      isAdmin: false,
+      balance: 100 // Starter balance for guest
+    };
+
+    setUser(guestUser);
+
+    // Optional: could persist basic guest session to localStorage if we wanted persistence
+    // but for now user requested ephemeral or just basic
+  };
+
   const balance = user?.balance ?? 0;
   const isAuthenticated = !!user;
 
@@ -342,7 +364,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       switchUser,
       updateBalance,
       addGameHistory,
-      addTransaction
+      addTransaction,
+      continueAsGuest
     }}>
       {children}
     </AppContext.Provider>
