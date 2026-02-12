@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useOutletContext } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { AppProvider, useApp } from './context/AppContext';
 import Navbar from './components/Navbar';
 import SlotMachine from './components/SlotMachine';
@@ -93,6 +94,7 @@ const App: React.FC = () => {
   return (
     <AppProvider>
         <AppContent />
+        <Analytics />
     </AppProvider>
   );
 };
