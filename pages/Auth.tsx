@@ -71,7 +71,7 @@ const Auth: React.FC = () => {
                         </h1>
 
                         <p className="text-xl md:text-2xl text-gray-300 font-medium leading-relaxed max-w-lg mx-auto md:mx-0">
-                            Join the fastest growing crypto casino. <br />
+                            Join the fastest growing virtual casino. <br />
                             <span className="text-white font-bold">Get R100 FREE</span> when you play as a guest today.
                         </p>
                     </div>

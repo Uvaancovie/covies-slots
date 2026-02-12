@@ -1,5 +1,5 @@
 {
-  "name": "Gemini Slot Machine",
+  "name": "Covies Slots",
   "description": "A 5x3, 20-line video slot game simulator built with React, TypeScript, and Tailwind CSS, featuring game logic for paylines, free spins, and a Gemini-powered 'Lucky Story' generator for winning spins.",
   "requestFramePermissions": []
 }
