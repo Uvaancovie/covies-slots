@@ -24,11 +24,12 @@ const getAuthHeaders = () => {
 };
 
 // ⚡ Request deduplication cache to prevent duplicate API calls
-const pendingRequests = new Map<string, Promise<any>>();
+const pendingRequests = new Map<string, Promise<Response>>();
 
 const deduplicatedFetch = async (key: string, fetchFn: () => Promise<Response>): Promise<Response> => {
   if (pendingRequests.has(key)) {
-    return pendingRequests.get(key)!;
+    const sharedResponse = await pendingRequests.get(key)!;
+    return sharedResponse.clone();
   }
 
   const promise = fetchFn().finally(() => {
@@ -36,7 +37,8 @@ const deduplicatedFetch = async (key: string, fetchFn: () => Promise<Response>):
   });
 
   pendingRequests.set(key, promise);
-  return promise;
+  const response = await promise;
+  return response.clone();
 };
 
 interface AppContextType {

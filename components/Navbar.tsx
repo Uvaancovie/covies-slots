@@ -40,6 +40,7 @@ const Navbar: React.FC<{ onOpenDeposit: () => void }> = ({ onOpenDeposit }) => {
                         <NavLink to="/bonuses" className={linkClass}>Bonuses</NavLink>
                         <NavLink to="/account" className={linkClass}>Account</NavLink>
                         {user?.isAdmin && <NavLink to="/admin" className={linkClass}>Admin</NavLink>}
+                        {user?.isAdmin && <NavLink to="/engine-test" className={linkClass}>Engine Test</NavLink>}
                     </div>
 
                     {/* Right Side: Balance & User */}
@@ -87,6 +88,7 @@ const Navbar: React.FC<{ onOpenDeposit: () => void }> = ({ onOpenDeposit }) => {
                     <NavLink to="/bonuses" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-yellow-400 font-bold">Bonuses & Referrals</NavLink>
                     <NavLink to="/account" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-yellow-400 font-bold">My Account</NavLink>
                     {user?.isAdmin && <NavLink to="/admin" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-yellow-400 font-bold">Admin Dashboard</NavLink>}
+                    {user?.isAdmin && <NavLink to="/engine-test" onClick={() => setIsMenuOpen(false)} className="block text-gray-300 hover:text-yellow-400 font-bold">Engine Test</NavLink>}
                     <div className="pt-4 border-t border-gray-800">
                          <div className="flex justify-between items-center mb-4">
                              <span className="text-yellow-400 font-mono font-bold">{balance.toFixed(2)} ZAR</span>

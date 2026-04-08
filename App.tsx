@@ -10,6 +10,7 @@ import Bonuses from './pages/Bonuses';
 import Admin from './pages/Admin';
 import Account from './pages/Account';
 import Auth from './pages/Auth';
+import EngineTest from './pages/EngineTest';
 import DepositModal from './components/DepositModal';
 
 const Layout: React.FC = () => {
@@ -67,6 +68,8 @@ const AppContent: React.FC = () => {
                     path="/auth" 
                     element={isAuthenticated ? <Navigate to="/" replace /> : <AuthPage />} 
                 />
+
+                <Route path="/engine-test" element={<EngineTest />} />
                 
                 {/* Protected routes */}
                 <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>

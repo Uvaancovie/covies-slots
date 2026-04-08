@@ -3,14 +3,20 @@ import { db } from '../../drizzle/index';
 import { users } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { verifyPassword, signToken, setAuthCookie } from '../../lib/auth';
-import { ensureServerConfigured } from '../../lib/server-config';
+import { getMissingServerEnv } from '../../lib/server-config';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!ensureServerConfigured(res)) return;
+  const missing = getMissingServerEnv();
+  if (missing.length > 0) {
+    return res.status(503).json({
+      error: 'Auth service unavailable: server environment is not configured',
+      missing,
+    });
+  }
 
   try {
     const { email, password } = req.body;

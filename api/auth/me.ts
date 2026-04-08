@@ -4,14 +4,21 @@ import { users } from '../../drizzle/schema';
 import { eq } from 'drizzle-orm';
 import { requireAuth } from '../../lib/auth';
 import { getUserBalance } from '../../lib/db-helpers';
-import { ensureServerConfigured } from '../../lib/server-config';
+import { getMissingServerEnv } from '../../lib/server-config';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  if (!ensureServerConfigured(res)) return;
+  const missing = getMissingServerEnv();
+  if (missing.length > 0) {
+    return res.status(200).json({
+      user: null,
+      serverConfigured: false,
+      missing,
+    });
+  }
 
   const authUser = requireAuth(req, res);
   if (!authUser) return;

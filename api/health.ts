@@ -21,6 +21,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const result: any = {
     serverTime: new Date().toISOString(),
+    healthy: missing.length === 0,
     missingEnv: missing,
     jwtSecretPresent: Boolean(process.env.JWT_SECRET),
     database: { reachable: false, detail: null, responseTime: null },
@@ -59,11 +60,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   performanceMetrics.avgResponseTime = 
     (performanceMetrics.avgResponseTime * (performanceMetrics.requests - 1) + responseTime) / 
     performanceMetrics.requests;
-
-  // If there are missing env vars, return 500 to indicate misconfiguration
-  if (missing.length > 0) {
-    return res.status(500).json(result);
-  }
 
   return res.status(200).json(result);
 }
