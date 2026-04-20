@@ -3,18 +3,26 @@
 @tailwind utilities;
 
 html, body {
+  height: 100%;
   min-height: 100%;
   overflow-x: hidden;
 }
 
+#root {
+  min-height: 100%;
+}
+
 body {
-  overscroll-behavior-y: contain;
+  min-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
 }
 
 /* Allow scrolling but prevent pull-to-refresh */
 html {
   overflow-y: scroll;
+  scroll-behavior: smooth;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -38,6 +46,7 @@ html {
 @media (max-width: 768px) {
   body {
     position: relative;
+    min-height: 100svh;
   }
   
   /* Ensure main content area is scrollable */

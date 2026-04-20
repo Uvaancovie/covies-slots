@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSlotMachine } from '../hooks/useSlotMachine';
 import Reel from './Reel';
 import Controls from './Controls';
@@ -35,6 +35,8 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ onOpenDeposit }) => {
 
   const [showPaytable, setShowPaytable] = useState(false);
   const [showResultPopup, setShowResultPopup] = useState(false);
+    const slotLinesRef = useRef<HTMLDivElement>(null);
+    const wasSpinningRef = useRef(false);
 
   // Initialize audio on first user interaction with the cabinet
   const handleInteraction = () => {
@@ -72,6 +74,17 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ onOpenDeposit }) => {
       }
   }, [isSpinning]);
 
+    useEffect(() => {
+        if (isSpinning && !wasSpinningRef.current) {
+            slotLinesRef.current?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start',
+            });
+        }
+
+        wasSpinningRef.current = isSpinning;
+    }, [isSpinning]);
+
   const isWin = lastResult && lastResult.totalWin > 0;
   const winningPositions = lastResult?.lineWins.flatMap(w => w.positions)
     .concat(lastResult?.scatterWin?.positions || []) || [];
@@ -105,7 +118,7 @@ const SlotMachine: React.FC<SlotMachineProps> = ({ onOpenDeposit }) => {
                     </div>
                 </div>
 
-                <div className="relative mb-3 sm:mb-6 bg-black rounded-lg border-2 sm:border-4 border-yellow-900/40 shadow-[inset_0_0_20px_rgba(0,0,0,1)] overflow-hidden mt-2 sm:mt-4">
+                <div ref={slotLinesRef} className="relative mb-3 sm:mb-6 bg-black rounded-lg border-2 sm:border-4 border-yellow-900/40 shadow-[inset_0_0_20px_rgba(0,0,0,1)] overflow-hidden mt-2 sm:mt-4 scroll-mt-24 sm:scroll-mt-28">
                     <div className="absolute inset-0 z-20 pointer-events-none bg-gradient-to-b from-white/5 to-transparent h-1/3 opacity-30"></div>
                     <div className="absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-black to-transparent z-20 pointer-events-none opacity-80"></div>
                     <div className="absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-black to-transparent z-20 pointer-events-none opacity-80"></div>
